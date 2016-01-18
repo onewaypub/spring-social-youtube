@@ -12,7 +12,7 @@ public class AbstractYoutubeOperations {
 
     protected void requireAuthorization(){
         if(!isAuthorized){
-            throw new MissingAuthorizationException();
+            throw new MissingAuthorizationException("");
         }
     }
 }

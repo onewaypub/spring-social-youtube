@@ -5,19 +5,20 @@
  */
 package org.springframework.social.youtube.api.impl;
 
-import com.google.gson.internal.Pair;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.map.type.CollectionType;
-import org.codehaus.jackson.map.type.TypeFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationConfig;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.http.converter.json.MappingJacksonHttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.social.UncategorizedApiException;
 import org.springframework.social.oauth2.AbstractOAuth2ApiBinding;
 import org.springframework.social.oauth2.OAuth2Version;
@@ -244,7 +245,7 @@ public class YoutubeTemplate extends AbstractOAuth2ApiBinding implements Youtube
         HttpEntity<T> entity = new HttpEntity<T>(headers);
         YoutubeParser<T, Object> parser = parserMap.get(new Pair<YoutubeDataFormat, Class<T>>(format, type));
         if(null == parser){
-            throw new UncategorizedApiException("Unable to deserialize type: "+type.getName()+ " with a format:  "+format, new Exception());
+            throw new UncategorizedApiException("youtube","Unable to deserialize type: "+type.getName()+ " with a format:  "+format, new Exception());
         }
         T result = null;
         switch(format){
@@ -300,7 +301,7 @@ public class YoutubeTemplate extends AbstractOAuth2ApiBinding implements Youtube
         HttpEntity<T> entity = new HttpEntity<T>(headers);
         YoutubeParser<T, Object> parser = parserMap.get(new Pair<YoutubeDataFormat, Class<T>>(format, type));
         if(null == parser){
-            throw new UncategorizedApiException("Unable to deserialize type: "+type.getName()+ " with a format:  "+format, new Exception());
+            throw new UncategorizedApiException("youtube","Unable to deserialize type: "+type.getName()+ " with a format:  "+format, new Exception());
         }
         List<T> result = null;
         JsonNode node=null;
@@ -398,33 +399,35 @@ public class YoutubeTemplate extends AbstractOAuth2ApiBinding implements Youtube
     }
 
     @Override
-    protected MappingJacksonHttpMessageConverter getJsonMessageConverter() {
-        MappingJacksonHttpMessageConverter converter = super.getJsonMessageConverter();
+    protected MappingJackson2HttpMessageConverter getJsonMessageConverter() {
+        MappingJackson2HttpMessageConverter converter = super.getJsonMessageConverter();
         objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.configure(SerializationConfig.Feature.FAIL_ON_EMPTY_BEANS, false);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         objectMapper.registerModule(new YoutubeModule());
-        converter.setObjectMapper(objectMapper);
+        
         return converter;
     }
+    
+    
 
 
     private <T> T deserializeEntryDataJson(JsonNode jsonNode, final Class<T> type){
         try{
-            return objectMapper.readValue(jsonNode.get("entry"), type);
+            return objectMapper.readValue(jsonNode.get("entry").asText(), type);
         }catch(IOException e){
             e.printStackTrace();
-            throw new UncategorizedApiException("Error deserializing data from Youtube: " + e.getMessage(), e);
+            throw new UncategorizedApiException("youtube","Error deserializing data from Youtube: " + e.getMessage(), e);
         }
     }
 
-    @SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
     private <T> List<T> deserializeDataList(JsonNode jsonNode, final Class<T> elementType) {
         try {
             CollectionType listType = TypeFactory.defaultInstance().constructCollectionType(List.class, elementType);
-            return (List<T>) objectMapper.readValue(jsonNode, listType);
+            return (List<T>) objectMapper.readValue(jsonNode.asText(), listType);
         } catch (IOException e) {
-            throw new UncategorizedApiException("Error deserializing data from Youtube: " + e.getMessage(), e);
+            throw new UncategorizedApiException("youtube","Error deserializing data from Youtube: " + e.getMessage(), e);
         }
     }
 

@@ -48,7 +48,7 @@ public class YoutubeConnectionFactoryTest {
         YoutubeConnectionFactory factorySpy = spy(factory);
 
 
-        AccessGrant accessGrant = new AccessGrant("test token", "test scope", "test refresh token", 1);
+        AccessGrant accessGrant = new AccessGrant("test token", "test scope", "test refresh token", 1L);
 
         doReturn(oAuth2Connection).when(factorySpy).createConnection(accessGrant);
         Connection<Youtube> connection = factorySpy.createConnection(accessGrant);
